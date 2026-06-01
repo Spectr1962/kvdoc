@@ -1,0 +1,35 @@
+{
+    "name": "Медицинская клиника Вербенкина",
+    "short_name": "Клиника Вербенкина",
+    "description": "Электронная медкарта, запись к врачам и онлайн-консультации в клинике Вербенкина.",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "theme_color": "#1A237E",
+    "background_color": "#FAFAFA",
+    "categories": [
+        "medical",
+        "health"
+    ],
+    "icons": [
+        {
+            "src": "/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+  --color-brand-indigo: #4f46e5;
+  --color-brand-blue: #3b82f6;
+
+  /* Настраиваем премиальную, очень мягкую тень без эффекта "грязи" */
+  --shadow-xs: 0 4px 20px -2px rgba(17, 24, 39, 0.04), 0 2px 8px -1px rgba(17, 24, 39, 0.02);
+  --shadow-md: 0 12px 30px -4px rgba(17, 24, 39, 0.06), 0 4px 12px -2px rgba(17, 24, 39, 0.03);
+}
+
+@layer base {
+  html {
+    @apply font-sans antialiased text-slate-900 bg-slate-50/50;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    @apply font-sans min-h-screen flex flex-col;
+  }
+}
+
+@keyframes progress {
+  0% {
+    width: 0%;
+  }
+
+  100% {
+    width: 100%;
+  }
+}
+
+@layer utilities {
+
+  /* Единая точка конфигурации шрифта описаний для всего сайта */
+  .medical-description {
+    font-size: 0.75rem;
+    /* text-xs (12px) */
+    color: #334155;
+    /* text-slate-700 (глубокий читаемый графит) */
+    font-weight: 500;
+    /* font-medium (хорошая плотность букв) */
+    line-height: 1.625;
+    /* leading-relaxed (комфортный межстрочный воздух) */
+  }
+}

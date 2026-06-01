@@ -1,0 +1,232 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+// РАЗДЕЛ "О КЛИНИКЕ" & ПРАВОВАЯ ИНФОРМАЦИЯ (E-E-A-T Доверие Яндекса/Google)
+model ClinicLegalInfo {
+  id               String   @id @default(uuid())
+  legalName        String   // Официальное юрлицо (например, ООО "Клиника Вербенкина")
+  inn              String   // ИНН — критично для валидации Яндексом
+  ogrn             String   // ОГРН компании
+  historyText      String   @db.Text
+  valuesData       Json     // Массив преимуществ для сквозных плашек Apple Style (JSON)
+  licenses         Json     // Ссылки на PDF/сканы медицинских лицензий
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// Раздел вакансий и HR-бренда (Повышает коммерческий вес организации)
+model AboutPageContent {
+  id             String   @id @default(uuid())
+  type           String   // Только "careers" (вакансии)
+  slug           String   @unique
+  title          String   // Название вакансии (например, "Врач-гастроэнтеролог")
+  h1             String   @default("") // Чистый журнальный H1 без капса
+  metaTitle      String   @default("") // Тег <title> для вакансии
+  seoDescription String   // Описание вакансии для поисковой выдачи
+  salary         String   @default("по результатам собеседования") // Коммерческий маркер
+  content        String   @db.Text // Требования, обязанности, условия
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([type, slug])
+}
+// НАПРАВЛЕНИЕ (Категория 1-го уровня: Гастроэнтерология, Стоматология)
+model Direction {
+  id             String           @id @default(cuid())
+  slug           String           @unique // Используется для iconMap в Блоке 2 на главной
+  title          String           // Название для мега-меню и навигации
+  h1             String           @default("") // Поисковый заголовок с гео-привязкой
+  metaTitle      String           @default("") // Тег <title>
+  description    String?          @db.Text     // SEO-текст (токен medical-description)
+  metaDescription String   @default("")
+  
+  // Связи каталога
+  subdirections  Subdirection[]
+  services       MedicalService[]
+  doctors        Doctor[]         // Специалисты, принимающие в этом отделении
+  
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+// ПОДРАЗДЕЛ (Категория 2-го уровня: Лечение кариеса, Экспертная Диагностика)
+model Subdirection {
+  id             String           @id @default(cuid())
+  slug           String           @unique
+  title          String
+  h1             String           @default("")
+  metaTitle      String           @default("")
+  description    String?          @db.Text
+  
+  // Внешний ключ родительского направления
+  directionId    String
+  direction      Direction        @relation(fields: [directionId], references: [id], onDelete: Cascade)
+  
+  // Связи каталога
+  services       MedicalService[]
+  doctors        Doctor[]
+  
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([directionId])
+}
+
+// КОНКРЕТНАЯ МЕДИЦИНСКАЯ УСЛУГА
+model MedicalService {
+  id                String         @id @default(cuid())
+  slug              String         @unique // Генерируется через slugify в seed-services.ts
+  title             String         // Официальное название из прайса МИС
+  marketingTitle    String         @default("") // Понятное пациенту название для SEO
+  h1                String         @default("") // Заголовок страницы услуги
+  metaTitle         String         @default("") // Тег <title> с гео-маркером и ценой
+  seoDescription    String         @default("") // Описание для сниппета выдачи
+  price             Int            // Базовая стоимость услуги
+  promoPrice        Int?           // Автоматическая акционная цена (перечеркнутый прайс)
+  description       String?        @db.Text     // Текст страницы
+  indications       String?        @db.Text     // Показания
+  contraindications String?        @db.Text     // Противопоказания
+  faq               Json           @default("[]") // Структурированный массив для Schema.org FAQPage
+  ratingCache       Float          @default(5.0)  // Звезды на первом экране (Фактор кликабельности)
+  isPopular         Boolean        @default(false) // Маркер для вывода на Главной
+  
+  // Внешние ключи связей
+  directionId       String
+  direction         Direction      @relation(fields: [directionId], references: [id], onDelete: Cascade)
+  subdirectionId    String?
+  subdirection      Subdirection?  @relation(fields: [subdirectionId], references: [id], onDelete: SetNull)
+  
+  // Связи: увязаны взаимные массивы для вывода нескольких врачей на одну услугу
+  doctors           Doctor[]       
+  reviews           ServiceReview[] // Реальные отзывы пациентов об услуге
+  promos            Promo[]        // Привязка к действующим акциям
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([directionId])
+  @@index([subdirectionId])
+  @@index([isPopular])
+}
+// ТАБЛИЦА ВРАЧЕЙ (Факторы доверия E-E-A-T)
+model Doctor {
+  id                String           @id @default(uuid())
+  slug              String           @unique // Участвует в трехсегментном роуте
+  name              String           // ФИО врача (участвует в fallback-поиске Next.js 15)
+  specialty         String           // Специальность (выводится строчными в индиго text-indigo-600/90)
+  category          String           @default("") // К.М.Н., Врач высшей категории
+  photoUrl          String           @default("") // Профессиональное фото доктора
+  biography         String           @db.Text     // Уникальная история/описание
+  education         String[]         // Массив дипломов/вузов
+  accreditation     String[]         // Действующая аккредитация
+  h1                String           @default("") // Заголовок профиля
+  metaTitle         String           @default("") // Тег <title> ("Врач [Специальность] [ФИО] отзывы...")
+  seoDescription    String           // Тег <meta description>
+  ratingCache       Float            @default(5.0) // Кэш оценки (вывод в DoctorsSlider)
+  is_active         Boolean          @default(true)
+  
+  // Связи со смежными сущностями сайта
+  directions        Direction[]
+  subdirections     Subdirection[]
+  posts             Post[]           // Статьи, написанные или проверенные этим врачом
+  services          MedicalService[] // Услуги, которые выполняет данный специалист
+  reviews           DoctorReview[]   // Отзывы пациентов о докторе
+  promos            Promo[]
+
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+}
+
+// Отзывы об услугах клиники (Для генерации расширенных сниппетов в поиске)
+model ServiceReview {
+  id               String         @id @default(uuid())
+  serviceId        String
+  service          MedicalService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  patientName      String         @default("Пациент")
+  textReview       String         @db.Text
+  rating           Int            // Оценка (1-5)
+  createdAt        DateTime       @default(now())
+
+  @@index([serviceId])
+}
+
+// Отзывы о конкретных врачах (Для агрегации рейтинга в карточках слайдера)
+model DoctorReview {
+  id               String         @id @default(uuid())
+  doctorId         String
+  doctor           Doctor         @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  patientName      String         @default("Пациент")
+  textReview       String         @db.Text
+  rating           Int            // Оценка (1-5)
+  createdAt        DateTime       @default(now())
+
+  @@index([doctorId])
+}
+// Экспертные статьи блога (Информационное SEO, линковка на коммерческие услуги)
+model Post {
+  id             String         @id @default(uuid())
+  type           String         // "article" (Статьи), "advice" (Советы врача), "disease" (Заболевания)
+  slug           String         @unique
+  title          String
+  h1             String         @default("")
+  metaTitle      String         @default("")
+  content        String         @db.Text     // Текст (токен medical-description)
+  seoDescription String
+  
+  // Авторитетность контента (Google E-E-A-T требует указания реального врача-автора)
+  authorId       String
+  author         Doctor         @relation(fields: [authorId], references: [id])
+  
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([type, slug])
+}
+
+// Таблица Акций и Спецпредложений (Коммерческий фактор ранжирования)
+model Promo {
+  id             String           @id @default(uuid())
+  slug           String           @unique // Используется для PromosSlider
+  title          String
+  h1             String           @default("")
+  metaTitle      String           @default("")
+  description    String           @db.Text
+  conditions     String?          @db.Text // Развернутые условия акции
+  discountBadge  String           // Текстовая плашка выгоды (например, "-20%" или "Выгода 5000₽")
+  oldPrice       Int?
+  newPrice       Int?
+  untilDate      String           // Срок действия акции для роботов
+  isActive       Boolean          @default(true)
+  
+  // Перелинковка для повышения веса страниц
+  services       MedicalService[] // Какие услуги входят в акцию
+  doctors        Doctor[]         // К каким врачам можно записаться по спецпредложению
+  
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([slug])
+}
+
+// Системные новости клиники
+model News {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  title       String
+  h1          String   @default("")
+  metaTitle   String   @default("")
+  content     String   @db.Text
+  isImportant Boolean  @default(false) // Флаг для выделения объявлений
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slug])
+  @@index([createdAt])
+}
