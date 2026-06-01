@@ -3,14 +3,14 @@
 import Link from "next/link";
 
 const FOOTER_DIRECTIONS = [
-    { href: "/services/ginekologiya", label: "Гинекология" },
-    { href: "/services/uzi", label: "УЗИ диагностика" },
+    { href: "/services/[direction-slug]inekologiya", label: "Гинекология" },
+    { href: "/services/[direction-slug]zi", label: "УЗИ диагностика" },
     { href: "/services/analizy", label: "Анализы и процедурный кабинет" },
-    { href: "/services/dermatologiya", label: "Дерматология" },
-    { href: "/services/trihologiya", label: "Трихология" },
+    { href: "/services/[direction-slug]ermatologiya", label: "Дерматология" },
+    { href: "/services/[direction-slug]rihologiya", label: "Трихология" },
     { href: "/services/allergologiya", label: "Аллергология и Иммунология" },
-    { href: "/services/endokrinologiya", label: "Эндокринология" },
-    { href: "/services/gastroenterologiya", label: "Гастроэнтерология" },
+    { href: "/services/[direction-slug]ndokrinologiya", label: "Эндокринология" },
+    { href: "/services/[direction-slug]astroenterologiya", label: "Гастроэнтерология" },
 ];
 
 export default function Footer() {

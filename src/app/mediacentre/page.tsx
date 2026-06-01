@@ -1,8 +1,8 @@
 import { db } from "~/server/db";
 import { Suspense } from "react";
-import Breadcrumbs from "~/components/shared/Breadcrumbs";
-import MedicalDisclaimer from "~/components/shared/MedicalDisclaimer";
-import MediacentreClientHub from "~/components/shared/MediacentreClientHub";
+import Breadcrumbs from "~/components/shared/breadcrumbs";
+import MedicalDisclaimer from "~/components/shared/medical-disclaimer";
+import MediacentreClientHub from "~/components/shared/mediacentre-client-hub"; // строго маленькими буквами
 
 export const dynamic = "force-dynamic";
 

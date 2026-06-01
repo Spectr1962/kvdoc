@@ -1,8 +1,8 @@
 import { type Metadata } from "next";
 import Image from "next/image";
-import Breadcrumbs from "~/components/shared/Breadcrumbs";
-import MedicalDisclaimer from "~/components/shared/MedicalDisclaimer";
-import ContactForm from "~/components/shared/ContactForm";
+import Breadcrumbs from "~/components/shared/breadcrumbs";
+import MedicalDisclaimer from "~/components/shared/medical-disclaimer";
+import ContactForm from "~/components/shared/contact-form"; // строго маленькими буквами
 
 export const dynamic = "force-dynamic";
 

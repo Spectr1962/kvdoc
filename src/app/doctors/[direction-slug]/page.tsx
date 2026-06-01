@@ -1,26 +1,41 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "~/server/db";
-import Breadcrumbs from "~/components/shared/Breadcrumbs";
-import MedicalDisclaimer from "~/components/shared/MedicalDisclaimer";
+import Breadcrumbs from "~/components/shared/breadcrumbs";
+import MedicalDisclaimer from "~/components/shared/medical-disclaimer";
 
 export const dynamic = "force-dynamic";
 
+// 1. Исправили тип в интерфейсе на 'direction-slug'
 interface PageProps {
-    params: Promise<{ directionSlug: string }>;
+    params: Promise<{ 'direction-slug': string }>;
 }
 
+// 2. Убрали 'default' (метаданные должны быть просто именным экспортом) и добавили тип PageProps
+export async function generateMetadata({ params }: PageProps) {
+    const resolvedParams = await params;
+    const directionSlug = resolvedParams['direction-slug'];
+
+    const direction = await db.direction.findUnique({
+        where: { slug: directionSlug },
+        select: { title: true, h1: true } // Оптимизировали запрос, выбрав только нужные для SEO поля
+    });
+
+    if (!direction) return {};
+
+    return {
+        title: `${direction.title} — Врачи клиники`,
+        description: `Специалисты направления ${direction.title}. Запись на прием.`,
+    };
+}
+
+// 3. Добавили основной компонент страницы, который принимает те же PageProps
 export default async function DirectionDoctorsPage({ params }: PageProps) {
     const resolvedParams = await params;
-    const directionSlug = resolvedParams?.directionSlug;
+    const directionSlug = resolvedParams['direction-slug'];
 
-    if (!directionSlug) notFound();
-
-    // Находим направление клиники и всех привязанных к нему действующих врачей
-    const direction = await db.direction.findFirst({
-        where: {
-            slug: { equals: directionSlug, mode: 'insensitive' }
-        },
+    const direction = await db.direction.findUnique({
+        where: { slug: directionSlug },
         include: {
             doctors: {
                 orderBy: { name: 'asc' }

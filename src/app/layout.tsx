@@ -4,8 +4,8 @@ import { type Metadata } from "next";
 import { Montserrat } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
-import Header from "~/components/shared/Header";
-import Footer from "~/components/shared/Footer"; // ИСПРАВЛЕНО: Импортировали футер
+import Header from "~/components/shared/header";
+import Footer from "~/components/shared/footer"; // ИСПРАВЛЕНО: Импортировали футер
 
 export const metadata: Metadata = {
   title: {

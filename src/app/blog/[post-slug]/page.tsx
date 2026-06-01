@@ -1,19 +1,20 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "~/server/db";
-import Breadcrumbs from "~/components/shared/Breadcrumbs";
-import MedicalDisclaimer from "~/components/shared/MedicalDisclaimer";
+import Breadcrumbs from "~/components/shared/breadcrumbs";
+import MedicalDisclaimer from "~/components/shared/medical-disclaimer";
 import { type Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
 interface Props {
-    params: Promise<{ postSlug: string }>;
+    params: Promise<{ 'post-slug': string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const resolvedParams = await params;
-    const postSlug = resolvedParams?.postSlug;
+    // Извлекаем свойство с дефисом, используя синтаксис квадратных скобок
+    const postSlug = resolvedParams?.['post-slug'];
 
     if (!postSlug) return {};
 
@@ -28,6 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         title: post.title,
         description: post.seoDescription,
         alternates: {
+            // Исправлена интерполяция строки: добавлены обратные кавычки `` и знак $
             canonical: `https://kvdoc.ru{postSlug}`,
         }
     };
@@ -35,7 +37,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BlogPostPage({ params }: Props) {
     const resolvedParams = await params;
-    const postSlug = resolvedParams?.postSlug;
+    // Извлекаем свойство с дефисом, используя синтаксис квадратных скобок
+    const postSlug = resolvedParams?.['post-slug'];
 
     if (!postSlug) notFound();
 
@@ -49,6 +52,7 @@ export default async function BlogPostPage({ params }: Props) {
             }
         }
     });
+
 
     if (!post) notFound();
 

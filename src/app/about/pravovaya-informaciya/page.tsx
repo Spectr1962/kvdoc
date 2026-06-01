@@ -1,7 +1,7 @@
 import { type Metadata } from "next";
 import Link from "next/link";
-import Breadcrumbs from "~/components/shared/Breadcrumbs";
-import MedicalDisclaimer from "~/components/shared/MedicalDisclaimer";
+import Breadcrumbs from "~/components/shared/breadcrumbs"; // ✅ Исправлено на строчные
+import MedicalDisclaimer from "~/components/shared/medical-disclaimer"; // ✅ Исправлено на строчные
 
 export const dynamic = "force-dynamic";
 

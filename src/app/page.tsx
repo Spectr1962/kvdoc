@@ -2,11 +2,11 @@ import Link from "next/link";
 import { db } from "~/server/db"; // Именованный импорт из контекста проекта
 import DirectionIcon from "~/components/shared/DirectionIcons"; // Дефолтный импорт
 import { ServicesTabs } from "~/components/main/ServicesTabs"; // Именованный импорт
-import MedicalDisclaimer from "~/components/shared/MedicalDisclaimer"; // Дефолтный импорт
-import MyReviewsWidget from "~/components/shared/MyReviewsWidget";
+import MedicalDisclaimer from "~/components/shared/medical-disclaimer"; // Дефолтный импорт
+import MyReviewsWidget from "~/components/shared/my-reviews-widget";
 import Script from "next/script";
-import PromosSlider from "~/components/shared/PromosSlider";
-import DoctorsSlider from "~/components/shared/DoctorsSlider";
+import PromosSlider from "~/components/shared/promos-slider";
+import DoctorsSlider from "~/components/shared/doctors-slider";
 import {
   Stethoscope,
   TestTube,

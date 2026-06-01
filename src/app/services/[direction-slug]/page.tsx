@@ -2,17 +2,18 @@ import { notFound } from "next/navigation";
 import { type Metadata } from "next";
 import { db } from "~/server/db";
 import { PriceSection } from "~/components/sections/price-table";
-import Breadcrumbs from "~/components/shared/Breadcrumbs";
+import Breadcrumbs from "~/components/shared/breadcrumbs";
 
 interface ServicePageProps {
     params: Promise<{
-        directionSlug: string;
+        'direction-slug': string;
     }>;
 }
 
-// 1. ДИНАМИЧЕСКАЯ ГЕНЕРАЦИЯ SEO МЕТА-ТЕГОВ (С защитой от рантайм ошибок Prisma)
+// 1. ДИНАМИЧЕСКАЯ ГЕНЕРАЦИЯ SEO МЕТА-ТЕГОВ
 export async function generateMetadata({ params }: ServicePageProps): Promise<Metadata> {
-    const { directionSlug } = await params;
+    const resolvedParams = await params;
+    const directionSlug = resolvedParams['direction-slug'];
 
     const direction = await db.direction.findUnique({
         where: { slug: directionSlug },
@@ -27,7 +28,6 @@ export async function generateMetadata({ params }: ServicePageProps): Promise<Me
         return {};
     }
 
-    // Динамические фоллбэки на случай пустых полей в базе данных
     const pageTitle = direction.h1 || `${direction.title} в Москве`;
     const fallbackTitle = `${pageTitle} — цены в Клинике Вербенкина`;
     const fallbackDesc = direction.description || `Услуги отделения ${direction.title.toLowerCase()} в частной медицинской клинике. Актуальный прейскурант, квалифицированные специалисты и запись онлайн.`;
@@ -48,9 +48,9 @@ export async function generateMetadata({ params }: ServicePageProps): Promise<Me
 
 // 2. СЕРВЕРНЫЙ КОМПОНЕНТ СТРАНИЦЫ НАПРАВЛЕНИЯ
 export default async function ServiceDirectionPage({ params }: ServicePageProps) {
-    const { directionSlug } = await params;
+    const resolvedParams = await params;
+    const directionSlug = resolvedParams['direction-slug'];
 
-    // Извлекаем чистые данные направления из PostgreSQL
     const direction = await db.direction.findUnique({
         where: { slug: directionSlug },
         select: {
@@ -61,21 +61,18 @@ export default async function ServiceDirectionPage({ params }: ServicePageProps)
         },
     });
 
-    // Защита: если слаг не найден, отдаем чистую страницу 404
     if (!direction) {
         notFound();
     }
 
     return (
         <main className="min-h-screen bg-white pt-24 pb-16 font-sans selection:bg-indigo-50">
-            {/* Шапка страницы в стиле Apple */}
             <div className="max-w-5xl mx-auto px-4 mb-12">
-
-                {/* Интеграция переиспользуемого компонента хлебных крошек */}
+                {/* Привели к единому формату 'label' для хлебных крошек */}
                 <Breadcrumbs
                     items={[
-                        { title: "Услуги", href: "/services" },
-                        { title: direction.title }
+                        { label: "Услуги", href: "/services" },
+                        { label: direction.title }
                     ]}
                 />
 
@@ -90,19 +87,18 @@ export default async function ServiceDirectionPage({ params }: ServicePageProps)
                 )}
             </div>
 
-            {/* Интерактивный интерактивный прайс-лист с поиском */}
             <PriceSection directionSlug={directionSlug} />
         </main>
     );
 }
 
-// 3. СТАТИЧЕСКАЯ ГЕНЕРАЦИЯ МАРШРУТОВ (SSG для ускорения Core Web Vitals)
+// 3. СТАТИЧЕСКАЯ ГЕНЕРАЦИЯ МАРШРУТОВ (SSG)
 export async function generateStaticParams() {
     const directions = await db.direction.findMany({
         select: { slug: true },
     });
 
     return directions.map((d) => ({
-        directionSlug: d.slug,
+        'direction-slug': d.slug, // Ключ изменен под имя новой папки
     }));
 }

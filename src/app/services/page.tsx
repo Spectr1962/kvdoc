@@ -1,8 +1,8 @@
 import { type Metadata } from "next";
 import Link from "next/link";
 import { db } from "~/server/db";
-import Breadcrumbs from "~/components/shared/Breadcrumbs";
-import MedicalDisclaimer from "~/components/shared/MedicalDisclaimer";
+import Breadcrumbs from "~/components/shared/breadcrumbs";
+import MedicalDisclaimer from "~/components/shared/medical-disclaimer";
 
 export const dynamic = "force-dynamic";
 

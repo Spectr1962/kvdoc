@@ -1,75 +1,65 @@
 import { notFound } from "next/navigation";
-import Image from "next/image";
-import Link from "next/link";
 import { db } from "~/server/db";
-import Breadcrumbs from "~/components/shared/Breadcrumbs";
-import MedicalDisclaimer from "~/components/shared/MedicalDisclaimer";
-import { type Metadata } from "next";
+import Breadcrumbs from "~/components/shared/breadcrumbs";
+import MedicalDisclaimer from "~/components/shared/medical-disclaimer";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
-interface Props {
+// 1. Привели типы параметров к kebab-case (с дефисами), как теперь называются папки
+interface PageProps {
     params: Promise<{
-        directionSlug: string;
-        doctorSlug: string;
+        'direction-slug': string;
+        'doctor-slug': string;
     }>;
 }
 
-// Автоматическая генерация динамических метаданных и канонических URL для поисковых систем (Яндекс, Google)
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+// 2. Исправили генерацию метаданных (SEO-заголовков) карточки врача
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
     const resolvedParams = await params;
-    const doctorSlug = resolvedParams?.doctorSlug;
+    const directionSlug = resolvedParams['direction-slug'];
+    const doctorSlug = resolvedParams['doctor-slug'];
 
-    if (!doctorSlug) return {};
-
-    const doctor = await db.doctor.findFirst({
+    const doctor = await db.doctor.findUnique({
         where: { slug: doctorSlug },
-        select: { name: true, specialty: true }
+        select: { name: true, position: true }
     });
 
     if (!doctor) return {};
 
     return {
-        title: `${doctor.name} | ${doctor.specialty} Клиники Вербенкина`,
-        description: `Официальная страница врача клиники Вербенкина в Зеленограде: ${doctor.name}. Информация о квалификации, стаже работы, отзывы и онлайн-запись на прием.`,
-        alternates: {
-            canonical: `https://kvdoc.ru{resolvedParams.directionSlug}/${doctorSlug}`,
-        }
+        title: `${doctor.name} — ${doctor.position}`,
+        description: `Информация о специалисте: ${doctor.name}. Расписание и запись на прием.`,
     };
 }
 
-export default async function DoctorDetailPage({ params }: Props) {
+// 3. Исправили основной компонент страницы врача
+export default async function DoctorPage({ params }: PageProps) {
     const resolvedParams = await params;
-    const directionSlug = resolvedParams?.directionSlug;
-    const doctorSlug = resolvedParams?.doctorSlug;
+    // Извлекаем параметры через безопасные строковые ключи
+    const directionSlug = resolvedParams['direction-slug'];
+    const doctorSlug = resolvedParams['doctor-slug'];
 
-    if (!doctorSlug) notFound();
-
-    // Основной поиск врача в базе данных по его текстовому слагу
-    let doctor = await db.doctor.findFirst({
-        where: { slug: doctorSlug }
-    });
-
-    // Запасной умный поиск по фамилии, если слаг в СУБД пустой или записан иначе
-    if (!doctor) {
-        const lastNameSegment = doctorSlug.split("-")[0];
-        if (lastNameSegment) {
-            doctor = await db.doctor.findFirst({
-                where: {
-                    name: {
-                        contains: lastNameSegment,
-                        mode: 'insensitive'
-                    }
-                }
-            });
+    // Запрос к БД Prisma с фильтрацией по новому kebab-case слагу
+    const doctor = await db.doctor.findUnique({
+        where: { slug: doctorSlug },
+        include: {
+            directions: true // Загружаем направления врача для хлебных крошек
         }
-    }
+    });
 
     if (!doctor) notFound();
 
+    // Проверяем, соответствует ли врач текущему направлению в URL
+    const hasDirection = doctor.directions.some(d => d.slug === directionSlug);
+    if (!hasDirection) notFound();
+
+    const activeDirection = doctor.directions.find(d => d.slug === directionSlug);
+
     const breadcrumbItems = [
         { label: "Главная", href: "/" },
-        { label: "Наши врачи", href: "/doctors" },
+        { label: "Врачи", href: "/doctors" },
+        { label: activeDirection?.title ?? "Направление", href: `/doctors/${directionSlug}` },
         { label: doctor.name }
     ];
 
