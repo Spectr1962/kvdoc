@@ -125,6 +125,7 @@ model Doctor {
   photoUrl          String           @default("") // Профессиональное фото доктора
   biography         String           @db.Text     // Уникальная история/описание
   education         String[]         // Массив дипломов/вузов
+  experienceYears Int @default(0) // Добавили поле стажа (целое число)
   accreditation     String[]         // Действующая аккредитация
   h1                String           @default("") // Заголовок профиля
   metaTitle         String           @default("") // Тег <title> ("Врач [Специальность] [ФИО] отзывы...")
