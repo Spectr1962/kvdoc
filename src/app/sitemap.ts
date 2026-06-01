@@ -1,17 +1,21 @@
 import { type MetadataRoute } from "next";
-import { db } from "~/server/db"; // ✅ Исправили алиас пути с @/ на ~/
+import { db } from "@/server/db"; // Измените на @/ или ~/ в зависимости от вашего tsconfig.json
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://verbenkin-clinic.ru";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     try {
-        // 1. СТАТИЧЕСКИЕ СТРАНИЦЫ
+        // 1. СТАТИЧЕСКИЕ И СЛУЖЕБНЫЕ СТРАНИЦЫ (Чистый английский, верхний уровень)
         const staticPages = [
             "",
             "/about",
             "/contacts",
-            "/privacy",
-            "/services"
+            "/services",
+            "/doctors",
+            "/mediacentre",
+            "/careers",
+            "/legal-info",
+            "/privacy-policy"
         ].map((route) => ({
             url: `${BASE_URL}${route}`,
             lastModified: new Date(),
@@ -19,7 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             priority: route === "" ? 1.0 : 0.8,
         }));
 
-        // 2. НАПРАВЛЕНИЯ УСЛУГ (kebab-case роуты)
+        // 2. МЕДИЦИНСКИЕ НАПРАВЛЕНИЯ УСЛУГ (Транслит из БД)
         const directions = await db.direction.findMany({
             select: { slug: true, updatedAt: true }
         });
@@ -31,7 +35,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             priority: 0.9,
         }));
 
-        // 3. СТРАНИЦЫ ВРАЧЕЙ (Учитываем новую структуру вложенности /doctors/[direction-slug]/[doctor-slug])
+        // 3. КАРТОЧКИ ВРАЧЕЙ (Вложенная структура /doctors/[direction-slug]/[doctor-slug])
         const doctors = await db.doctor.findMany({
             where: { is_active: true },
             include: {
@@ -40,7 +44,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         });
 
         const doctorPages = doctors.map((doc) => {
-            // Берем первое направление врача для формирования корректного URL
             const directionSlug = doc.directions[0]?.slug ?? "general";
             return {
                 url: `${BASE_URL}/doctors/${directionSlug}/${doc.slug}`,
@@ -50,36 +53,50 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             };
         });
 
-        // 4. СТАТЬИ БЛОГА
+        // 4. МЕДИЦЕНТР: ЭКСПЕРТНЫЕ СТАТЬИ (/mediacentre/articles/[slug])
         const posts = await db.post.findMany({
             select: { slug: true, updatedAt: true }
         });
 
         const postPages = posts.map((post) => ({
-            url: `${BASE_URL}/blog/${post.slug}`,
+            url: `${BASE_URL}/mediacentre/articles/${post.slug}`,
             lastModified: post.updatedAt,
             changeFrequency: "monthly" as const,
+            priority: 0.7,
+        }));
+
+        // 5. МЕДИЦЕНТР: НОВОСТИ КЛИНИКИ (/mediacentre/news/[slug])
+        const news = await db.news.findMany({
+            select: { slug: true, updatedAt: true }
+        });
+
+        const newsPages = news.map((item) => ({
+            url: `${BASE_URL}/mediacentre/news/${item.slug}`,
+            lastModified: item.updatedAt,
+            changeFrequency: "weekly" as const,
             priority: 0.6,
         }));
 
-        // 5. АКТУАЛЬНЫЕ АКЦИИ
+        // 6. МЕДИЦЕНТР: АКЦИИ И СПЕЦПРЕДЛОЖЕНИЯ (/mediacentre/promo/[slug])
         const promos = await db.promo.findMany({
             where: { isActive: true },
             select: { slug: true, updatedAt: true }
         });
 
         const promoPages = promos.map((promo) => ({
-            url: `${BASE_URL}/promotions/${promo.slug}`,
+            url: `${BASE_URL}/mediacentre/promo/${promo.slug}`,
             lastModified: promo.updatedAt,
             changeFrequency: "daily" as const,
-            priority: 0.7,
+            priority: 0.8,
         }));
 
+        // Объединяем все сгенерированные фиды для поисковых роботов
         return [
             ...staticPages,
             ...directionPages,
             ...doctorPages,
             ...postPages,
+            ...newsPages,
             ...promoPages
         ];
 
